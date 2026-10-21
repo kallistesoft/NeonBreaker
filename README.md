@@ -23,4 +23,4 @@ flutter test
 flutter run -d chrome
 ```
 
-Every push to `main` deploys the web version to https://breaker.kallistesoft.ca (GitHub Pages, `.github/workflows/web.yml`).
+Every push to `main` deploys the web version to https://breaker.kallistesoft.ca (GoDaddy hosting, `.github/workflows/deploy-godaddy.yml`).
