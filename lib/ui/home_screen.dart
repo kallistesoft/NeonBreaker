@@ -37,8 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('NEON', style: display(56, color: neonPink)),
-                  Text('BREAKER', style: display(40, color: neonCyan)),
+                  Text('BRICK', style: display(56, color: neonPink)),
+                  Text('SHATTER', style: display(40, color: neonCyan)),
                   const SizedBox(height: 10),
                   const Text('Break the grid. Beat the bosses.', style: TextStyle(color: dim, fontSize: 14, letterSpacing: 1)),
                   const SizedBox(height: 40),

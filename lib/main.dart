@@ -35,7 +35,7 @@ class NeonBreakerApp extends StatelessWidget {
       ads: ads,
       sound: sound,
       child: MaterialApp(
-        title: 'Neon Breaker',
+        title: 'Brick Shatter: Neon Breaker',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(useMaterial3: true, brightness: Brightness.dark, colorSchemeSeed: neonCyan, scaffoldBackgroundColor: background),
         home: const HomeScreen(),
