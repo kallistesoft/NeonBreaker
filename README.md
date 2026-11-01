@@ -1,4 +1,4 @@
-# Neon Breaker
+# Brick Shatter: Neon Breaker
 
 Arcade brick breaker in Flutter (Android, iOS, web) by Kallistesoft.
 

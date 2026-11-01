@@ -1,11 +1,11 @@
 {
-    "name": "Neon Breaker",
-    "short_name": "Neon Breaker",
+    "name": "Brick Shatter: Neon Breaker",
+    "short_name": "Brick Shatter",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#000000",
     "theme_color": "#07060F",
-    "description": "Neon Breaker: arcade brick breaker with bosses.",
+    "description": "Brick Shatter: Neon Breaker, arcade brick breaker with bosses.",
     "orientation": "portrait",
     "prefer_related_applications": false,
     "icons": [
