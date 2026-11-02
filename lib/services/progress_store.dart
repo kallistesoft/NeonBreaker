@@ -54,4 +54,21 @@ class ProgressStore {
   Future<void> recordBoss() => _prefs.setInt('bossesBeaten', bossesBeaten + 1);
 
   Future<void> setMuted(bool value) => _prefs.setBool('muted', value);
+
+  /// When the game was first opened; new players see no interstitials for a while.
+  DateTime firstLaunch() {
+    final ms = _prefs.getInt('firstLaunch');
+    if (ms != null) return DateTime.fromMillisecondsSinceEpoch(ms);
+    final now = DateTime.now();
+    _prefs.setInt('firstLaunch', now.millisecondsSinceEpoch);
+    return now;
+  }
+
+  /// "Remove Ads" bought; cached so it holds offline.
+  bool get premium => _prefs.getBool('premium') ?? false;
+  Future<void> setPremium(bool value) => _prefs.setBool('premium', value);
+
+  /// The rating card has been requested; it is only ever requested once.
+  bool get ratingAsked => _prefs.getBool('ratingAsked') ?? false;
+  Future<void> setRatingAsked() => _prefs.setBool('ratingAsked', true);
 }

@@ -586,6 +586,14 @@ class GameWorld {
     _serve();
   }
 
+  /// Second chance after a game over: one life, ball back on the paddle, same bricks.
+  void revive() {
+    lives = 1;
+    state = WorldState.playing;
+    balls.clear();
+    _serve();
+  }
+
   void _checkWin() {
     final won = boss != null ? boss!.hp <= 0 : bricksLeft == 0;
     if (!won) return;

@@ -8,11 +8,13 @@ import '../game/levels.dart';
 import '../game/model.dart';
 import '../game/world.dart';
 import '../services/progress_store.dart';
+import '../services/share_text.dart';
 import '../services/sound_service.dart';
 import 'effects.dart';
 import 'overlays.dart';
 import 'palette.dart';
 import 'services.dart';
+import 'share.dart';
 import 'world_painter.dart';
 
 enum Phase { playing, paused, intermission, gameOver }
@@ -39,6 +41,11 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   double introTime = 0;
   LevelResult? result;
   bool _started = false;
+
+  /// Waiting on a full-screen ad; a second tap must not start another level.
+  bool _busy = false;
+  bool _revived = false;
+  bool _canRevive = false;
 
   Services get services => Services.of(context);
 
@@ -171,26 +178,72 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     final level = world.spec.number;
     result = LevelResult(level: level, score: world.score, bonus: world.clearBonus, bestCombo: world.bestCombo, bricks: world.bricksBroken);
     unawaited(progress.recordScore(world.score));
-    if (world.spec.isBoss) unawaited(progress.recordBoss());
+    if (world.spec.isBoss) unawaited(_recordBoss());
     unawaited(progress.saveRun(SavedRun(level: level + 1, score: world.score, lives: world.lives)));
     setState(() => phase = Phase.intermission);
+  }
+
+  /// Asks for a rating once, after a second boss: the player knows the game and just won.
+  Future<void> _recordBoss() async {
+    final progress = services.progress;
+    final rating = services.rating;
+    await progress.recordBoss();
+    if (progress.bossesBeaten < 2 || progress.ratingAsked) return;
+    await progress.setRatingAsked();
+    await rating.prompt();
   }
 
   void _gameOver() {
     final progress = services.progress;
     unawaited(progress.recordScore(world.score));
-    unawaited(progress.clearRun());
+    _canRevive = !_revived && services.ads.rewardedReady;
+    // With a revive on offer the run stays saved until the player declines it.
+    if (!_canRevive) unawaited(progress.clearRun());
     setState(() => phase = Phase.gameOver);
   }
 
-  Future<void> _nextLevel() async {
+  Future<void> _revive() async {
+    if (_busy) return;
+    _busy = true;
+    final progress = services.progress;
+    final earned = await services.ads.showRewarded();
+    _busy = false;
+    if (!mounted) return;
+    if (!earned) {
+      unawaited(progress.clearRun());
+      setState(() => _canRevive = false);
+      return;
+    }
+    _revived = true;
+    _canRevive = false;
+    world.revive();
+    _last = null;
+    setState(() => phase = Phase.playing);
+    _focus.requestFocus();
+  }
+
+  Future<void> _retry() async {
+    if (_busy) return;
+    _busy = true;
     await services.ads.showInterstitial();
+    _busy = false;
+    if (!mounted) return;
+    _revived = false;
+    _startLevel(SavedRun(level: checkpointFor(world.spec.number), score: 0, lives: 3));
+  }
+
+  Future<void> _nextLevel() async {
+    if (_busy) return;
+    _busy = true;
+    await services.ads.showInterstitial();
+    _busy = false;
     if (!mounted) return;
     _startLevel(SavedRun(level: world.spec.number + 1, score: world.score, lives: world.lives));
   }
 
   void _startLevel(SavedRun run) {
     unawaited(services.progress.saveRun(run));
+    _last = null;
     setState(() {
       world = GameWorld(buildLevel(run.level), lives: run.lives, score: run.score);
       effects.clear();
@@ -234,7 +287,11 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     return PopScope(
       canPop: phase != Phase.playing,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _togglePause();
+        if (!didPop) {
+          _togglePause();
+        } else if (phase == Phase.gameOver) {
+          unawaited(services.progress.clearRun()); // leaving declines the revive
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -309,8 +366,13 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                                 best: services.progress.bestScore,
                                 level: world.spec.number,
                                 checkpoint: checkpointFor(world.spec.number),
-                                onRetry: () => _startLevel(SavedRun(level: checkpointFor(world.spec.number), score: 0, lives: 3)),
+                                onRetry: _retry,
                                 onHome: () => Navigator.of(context).pop(),
+                                onRevive: _canRevive ? _revive : null,
+                                onShare: () => shareText(
+                                  context,
+                                  bestScoreShareText(score: services.progress.bestScore, level: services.progress.bestLevel),
+                                ),
                               ),
                             ),
                         ],

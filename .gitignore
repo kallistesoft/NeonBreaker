@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Firebase config, kept in ~/Keys/kallistesoft/
+android/app/google-services.json

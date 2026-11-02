@@ -1,35 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:neon_breaker/game/levels.dart';
 import 'package:neon_breaker/game/world.dart';
 import 'package:neon_breaker/main.dart';
 import 'package:neon_breaker/services/ad_service.dart';
 import 'package:neon_breaker/services/progress_store.dart';
+import 'package:neon_breaker/services/rating_service.dart';
+import 'package:neon_breaker/services/share_text.dart';
 import 'package:neon_breaker/services/sound_service.dart';
 import 'package:neon_breaker/ui/game_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CountingAds implements AdService {
   int shown = 0;
+  int rewardedShown = 0;
+  bool ready = false;
+  bool earn = true;
 
   @override
   Future<void> showInterstitial() async => shown++;
+
+  @override
+  bool get rewardedReady => ready;
+
+  @override
+  Future<bool> showRewarded() async {
+    rewardedShown++;
+    return earn;
+  }
+}
+
+class CountingRating implements RatingService {
+  int prompts = 0;
+
+  @override
+  bool get available => true;
+  @override
+  Future<void> prompt() async => prompts++;
+  @override
+  Future<void> openStore() async {}
 }
 
 void main() {
   late ProgressStore progress;
   late CountingAds ads;
+  late CountingRating rating;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     progress = await ProgressStore.open();
     ads = CountingAds();
+    rating = CountingRating();
   });
 
   Future<void> pumpApp(WidgetTester tester) async {
     tester.view.physicalSize = const Size(412 * 3, 880 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(NeonBreakerApp(progress: progress, ads: ads, sound: NoSound()));
+    await tester.pumpWidget(
+      NeonBreakerApp(
+        progress: progress,
+        ads: ads,
+        sound: NoSound(),
+        rating: rating,
+        adRectangle: (_) => const SizedBox(key: Key('ad-slot'), width: 300, height: 250),
+      ),
+    );
   }
 
   GameWorld worldOf(WidgetTester tester) => (tester.state(find.byType(GameScreen)) as dynamic).world as GameWorld;
@@ -71,5 +107,123 @@ void main() {
     await tester.tap(find.text('QUIT'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('continue')), findsOneWidget);
+  });
+
+  Future<void> startAndLose(WidgetTester tester) async {
+    await pumpApp(tester);
+    await tester.tap(find.byKey(const Key('play')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final world = worldOf(tester);
+    world.lives = 1;
+    world.balls.clear();
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(find.text('GAME OVER'), findsOneWidget);
+  }
+
+  testWidgets('the rewarded revive continues the level once per run', (tester) async {
+    ads.ready = true;
+    await startAndLose(tester);
+    expect(progress.savedRun, isNotNull);
+
+    await tester.tap(find.byKey(const Key('revive')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(ads.rewardedShown, 1);
+    expect(find.text('GAME OVER'), findsNothing);
+    final world = worldOf(tester);
+    expect(world.lives, 1);
+    expect(world.hasStuckBall, isTrue);
+
+    world.balls.clear();
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(find.text('GAME OVER'), findsOneWidget);
+    expect(find.byKey(const Key('revive')), findsNothing);
+    expect(progress.savedRun, isNull);
+  });
+
+  testWidgets('no revive is offered without a loaded ad', (tester) async {
+    await startAndLose(tester);
+    expect(find.byKey(const Key('revive')), findsNothing);
+    expect(progress.savedRun, isNull);
+  });
+
+  testWidgets('skipping the rewarded ad ends the run', (tester) async {
+    ads.ready = true;
+    ads.earn = false;
+    await startAndLose(tester);
+    await tester.tap(find.byKey(const Key('revive')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('GAME OVER'), findsOneWidget);
+    expect(find.byKey(const Key('revive')), findsNothing);
+    expect(progress.savedRun, isNull);
+  });
+
+  testWidgets('going home declines the revive', (tester) async {
+    ads.ready = true;
+    await startAndLose(tester);
+    await tester.tap(find.text('HOME'));
+    await tester.pumpAndSettle();
+    expect(progress.savedRun, isNull);
+    expect(find.byKey(const Key('play')), findsOneWidget);
+  });
+
+  testWidgets('retry after game over goes through the interstitial', (tester) async {
+    await startAndLose(tester);
+    await tester.tap(find.text('RETRY'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(ads.shown, 1);
+    expect(find.text('GAME OVER'), findsNothing);
+  });
+
+  testWidgets('the rating card is requested once, after the second boss', (tester) async {
+    Future<void> beatBoss(int level) async {
+      await progress.clearRun();
+      await pumpApp(tester);
+      await tester.tap(find.byKey(const Key('play')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      final state = tester.state(find.byType(GameScreen)) as dynamic;
+      state.world = GameWorld(buildLevel(level), lives: 3, score: 0);
+      state.world.boss.hp = 0;
+      for (var i = 0; i < 150; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      expect(find.text('BOSS DEFEATED'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    }
+
+    await beatBoss(5);
+    expect(rating.prompts, 0);
+    await beatBoss(10);
+    expect(rating.prompts, 1);
+    await beatBoss(15);
+    expect(rating.prompts, 1);
+  });
+
+  testWidgets('home offers sharing once there is a score, and rating', (tester) async {
+    await pumpApp(tester);
+    await tester.pump();
+    expect(find.byKey(const Key('share')), findsNothing);
+    expect(find.byKey(const Key('rate')), findsOneWidget);
+
+    await progress.recordScore(18240);
+    await tester.pumpWidget(const SizedBox());
+    await pumpApp(tester);
+    await tester.pump();
+    expect(find.byKey(const Key('share')), findsOneWidget);
+  });
+
+  test('the shared text carries the score and the store link', () {
+    final text = bestScoreShareText(score: 18240, level: 12);
+    expect(text, contains('18,240'));
+    expect(text, contains('level 12'));
+    expect(text, contains('id=ca.kallistesoft.neon_breaker'));
   });
 }

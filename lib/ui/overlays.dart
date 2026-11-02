@@ -2,36 +2,23 @@ import 'package:flutter/material.dart';
 
 import '../game/levels.dart';
 import 'palette.dart';
+import 'services.dart';
 
-/// Reserved space for an ad between levels. Today it is a labeled placeholder; an AdMob
-/// banner (mobile) or a portal SDK slot (web) goes here without changing the layout.
+/// The 300×250 ad between levels. Collapses without an ad, after "Remove Ads", and on phones
+/// too narrow to show it in full.
 class AdSlot extends StatelessWidget {
   const AdSlot({super.key});
 
+  static const _minScreenWidth = 332.0; // 300 plus the panel's padding
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      key: const Key('ad-slot'),
-      width: 300,
-      height: 250,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
-        border: Border.all(color: dim.withValues(alpha: 0.5)),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      alignment: Alignment.center,
-      child: const Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'ADVERTISEMENT',
-            style: TextStyle(color: dim, fontSize: 11, letterSpacing: 3, fontWeight: FontWeight.w700),
-          ),
-          SizedBox(height: 6),
-          Text('300 × 250', style: TextStyle(color: dim, fontSize: 10)),
-        ],
-      ),
-    );
+    final services = Services.of(context);
+    final rectangle = services.adRectangle;
+    if (rectangle == null || services.premium.isPremium || MediaQuery.sizeOf(context).width < _minScreenWidth) {
+      return const SizedBox.shrink();
+    }
+    return Padding(padding: const EdgeInsets.only(bottom: 20), child: rectangle(context));
   }
 }
 
@@ -149,7 +136,6 @@ class IntermissionOverlay extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         const AdSlot(),
-        const SizedBox(height: 20),
         if (next.isBoss) ...[
           Text('WARNING', style: display(18, color: danger)),
           const SizedBox(height: 4),
@@ -204,6 +190,8 @@ class GameOverOverlay extends StatelessWidget {
     required this.checkpoint,
     required this.onRetry,
     required this.onHome,
+    required this.onShare,
+    this.onRevive,
   });
 
   final int score;
@@ -212,6 +200,10 @@ class GameOverOverlay extends StatelessWidget {
   final int checkpoint;
   final VoidCallback onRetry;
   final VoidCallback onHome;
+  final VoidCallback onShare;
+
+  /// Set while the one rewarded revive of the run is on offer.
+  final VoidCallback? onRevive;
 
   @override
   Widget build(BuildContext context) {
@@ -222,9 +214,26 @@ class GameOverOverlay extends StatelessWidget {
         Row(mainAxisSize: MainAxisSize.min, children: [_Stat('SCORE', '$score'), _Stat('BEST', '$best'), _Stat('LEVEL', '$level')]),
         if (score >= best && score > 0) ...[const SizedBox(height: 10), Text('NEW BEST', style: display(14, color: neonYellow))],
         const SizedBox(height: 28),
-        NeonButton(label: checkpoint > 1 ? 'RETRY FROM LEVEL $checkpoint' : 'RETRY', onPressed: onRetry),
+        if (onRevive != null) ...[
+          NeonButton(key: const Key('revive'), label: 'WATCH AD · +1 LIFE', onPressed: onRevive, color: neonYellow),
+          const SizedBox(height: 14),
+        ],
+        NeonButton(
+          label: checkpoint > 1 ? 'RETRY FROM LEVEL $checkpoint' : 'RETRY',
+          onPressed: onRetry,
+          filled: onRevive == null,
+        ),
         const SizedBox(height: 14),
         NeonButton(label: 'HOME', onPressed: onHome, filled: false),
+        if (best > 0) ...[
+          const SizedBox(height: 6),
+          TextButton.icon(
+            key: const Key('share'),
+            onPressed: onShare,
+            icon: const Icon(Icons.share_rounded, color: neonCyan, size: 18),
+            label: const Text('Share best score', style: TextStyle(color: neonCyan)),
+          ),
+        ],
       ],
     );
   }

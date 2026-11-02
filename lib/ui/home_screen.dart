@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../services/progress_store.dart';
+import '../services/share_text.dart';
 import 'game_screen.dart';
 import 'overlays.dart';
 import 'palette.dart';
+import 'remove_ads.dart';
 import 'services.dart';
+import 'share.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -71,9 +74,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       _Record('BOSSES', '${progress.bossesBeaten}'),
                     ],
                   ),
+                  if (progress.bestScore > 0)
+                    TextButton.icon(
+                      key: const Key('share'),
+                      onPressed: () => shareText(context, bestScoreShareText(score: progress.bestScore, level: progress.bestLevel)),
+                      icon: const Icon(Icons.share_rounded, color: neonCyan, size: 18),
+                      label: const Text('Share best score', style: TextStyle(color: neonCyan)),
+                    ),
                   const SizedBox(height: 28),
                   const _HowTo(),
                   const SizedBox(height: 12),
+                  RemoveAdsButtons(premium: services.premium),
+                  if (services.rating.available)
+                    TextButton.icon(
+                      key: const Key('rate'),
+                      onPressed: services.rating.openStore,
+                      icon: const Icon(Icons.star_rounded, color: neonYellow, size: 18),
+                      label: const Text('Rate the game', style: TextStyle(color: neonYellow)),
+                    ),
                   IconButton(
                     tooltip: 'Sound',
                     onPressed: () async {
@@ -83,6 +101,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icon(services.sound.muted ? Icons.volume_off_rounded : Icons.volume_up_rounded, color: dim),
                   ),
                   const Text('kallistesoft.ca', style: TextStyle(color: dim, fontSize: 11)),
+                  if (services.privacyOptionsRequired != null)
+                    ValueListenableBuilder(
+                      valueListenable: services.privacyOptionsRequired!,
+                      builder: (_, required, _) => required
+                          ? TextButton(
+                              onPressed: services.showPrivacyOptions,
+                              child: const Text('Privacy options', style: TextStyle(color: dim, fontSize: 11)),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                 ],
               ),
             ),
