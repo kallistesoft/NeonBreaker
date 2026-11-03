@@ -113,10 +113,13 @@ class LevelResult {
 
 /// Between levels: results, the ad slot, and what comes next.
 class IntermissionOverlay extends StatelessWidget {
-  const IntermissionOverlay({super.key, required this.result, required this.onContinue});
+  const IntermissionOverlay({super.key, required this.result, required this.onContinue, this.onShareBoss});
 
   final LevelResult result;
   final VoidCallback onContinue;
+
+  /// After a boss: dares friends to beat it too.
+  final VoidCallback? onShareBoss;
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +138,12 @@ class IntermissionOverlay extends StatelessWidget {
           children: [_Stat('SCORE', '${result.score}'), _Stat('BONUS', '+${result.bonus}'), _Stat('COMBO', 'x${result.bestCombo}')],
         ),
         const SizedBox(height: 20),
+        if (wasBoss && onShareBoss != null) ...[
+          NeonButton(key: const Key('shareBoss'), label: 'CHALLENGE FRIENDS', onPressed: onShareBoss, color: neonYellow, filled: false),
+          const SizedBox(height: 6),
+          const Text('Beat it? Dare your friends to do it too.', style: TextStyle(color: dim, fontSize: 12)),
+          const SizedBox(height: 20),
+        ],
         const AdSlot(),
         if (next.isBoss) ...[
           Text('WARNING', style: display(18, color: danger)),
@@ -231,7 +240,7 @@ class GameOverOverlay extends StatelessWidget {
             key: const Key('share'),
             onPressed: onShare,
             icon: const Icon(Icons.share_rounded, color: neonCyan, size: 18),
-            label: const Text('Share best score', style: TextStyle(color: neonCyan)),
+            label: const Text('Challenge friends', style: TextStyle(color: neonCyan)),
           ),
         ],
       ],

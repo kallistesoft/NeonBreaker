@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../services/progress_store.dart';
-import '../services/share_text.dart';
 import 'game_screen.dart';
 import 'overlays.dart';
 import 'palette.dart';
 import 'remove_ads.dart';
 import 'services.dart';
 import 'share.dart';
+import 'share_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -77,9 +77,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (progress.bestScore > 0)
                     TextButton.icon(
                       key: const Key('share'),
-                      onPressed: () => shareText(context, bestScoreShareText(score: progress.bestScore, level: progress.bestLevel)),
+                      onPressed: () => shareCard(context, ShareCard.best(score: progress.bestScore, level: progress.bestLevel)),
                       icon: const Icon(Icons.share_rounded, color: neonCyan, size: 18),
-                      label: const Text('Share best score', style: TextStyle(color: neonCyan)),
+                      label: const Text('Challenge friends', style: TextStyle(color: neonCyan)),
                     ),
                   const SizedBox(height: 28),
                   const _HowTo(),

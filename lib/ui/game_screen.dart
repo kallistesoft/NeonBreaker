@@ -8,13 +8,13 @@ import '../game/levels.dart';
 import '../game/model.dart';
 import '../game/world.dart';
 import '../services/progress_store.dart';
-import '../services/share_text.dart';
 import '../services/sound_service.dart';
 import 'effects.dart';
 import 'overlays.dart';
 import 'palette.dart';
 import 'services.dart';
 import 'share.dart';
+import 'share_card.dart';
 import 'world_painter.dart';
 
 enum Phase { playing, paused, intermission, gameOver }
@@ -357,7 +357,16 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                             ),
                           if (phase == Phase.intermission && result != null)
                             Positioned.fill(
-                              child: IntermissionOverlay(result: result!, onContinue: _nextLevel),
+                              child: IntermissionOverlay(
+                                result: result!,
+                                onContinue: _nextLevel,
+                                onShareBoss: world.spec.boss == null
+                                    ? null
+                                    : () => shareCard(
+                                        context,
+                                        ShareCard.boss(boss: world.spec.boss!.title, score: result!.score, level: result!.level),
+                                      ),
+                              ),
                             ),
                           if (phase == Phase.gameOver)
                             Positioned.fill(
@@ -369,9 +378,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                                 onRetry: _retry,
                                 onHome: () => Navigator.of(context).pop(),
                                 onRevive: _canRevive ? _revive : null,
-                                onShare: () => shareText(
+                                onShare: () => shareCard(
                                   context,
-                                  bestScoreShareText(score: services.progress.bestScore, level: services.progress.bestLevel),
+                                  ShareCard.best(score: services.progress.bestScore, level: services.progress.bestLevel),
                                 ),
                               ),
                             ),
