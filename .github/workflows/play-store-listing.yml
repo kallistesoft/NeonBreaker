@@ -1,0 +1,25 @@
+# Uploads store/ (listing text, trailer link, feature graphic, screenshots) to Google Play.
+# Run it from the Actions tab: "Play Store listing" > Run workflow.
+name: Play Store listing
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Only check the files, upload nothing'
+        type: boolean
+        default: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install google-api-python-client google-auth
+      - name: Upload listing
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: python3 tools/upload_store_listing.py ${{ inputs.dry_run && '--dry-run' || '' }}
