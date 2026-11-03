@@ -2,32 +2,39 @@
 Brick Shatter: Neon Breaker
 
 # Short description
-Smash neon bricks and beat a boss every 5 levels in this arcade brick breaker.
+Brick breaker with epic boss fights! Smash neon bricks and beat every boss.
 
 # Full description
-Break the grid. Beat the bosses.
+Break the grid. Beat the bosses. 🧱⚡
 
-Brick Shatter: Neon Breaker is a fast arcade brick breaker with a glowing neon look. Slide to steer the paddle, tap to launch the ball, and clear every brick to finish the level.
+Brick Shatter: Neon Breaker is a fast arcade brick breaker with a glowing neon look and a real challenge: every 5th level, a boss is waiting. Slide to steer the paddle, tap to launch the ball, and smash every brick to finish the level.
 
-A BOSS EVERY 5 LEVELS
-Every fifth level is a boss fight: Sentinel, Hive, Prism and Titan each play differently, and they come back stronger.
+⚔️ 4 EPIC BOSSES
+Every fifth level is a boss fight, and each one plays differently:
+• SENTINEL sweeps across the screen and fires. Dodge the red shots.
+• HIVE breeds armor. Break through fast.
+• PRISM hides its core behind orbiting shields. Time your shots.
+• TITAN is huge, relentless, and gets angry when it's hurt.
+Beat them all… then they come back stronger.
 
-LEVELS THAT KEEP CHANGING
-Wall shapes change as you go, with tougher bricks, steel, explosive bricks and rising speed.
+🧱 LEVELS THAT KEEP CHANGING
+New wall shapes, 7 neon color themes, steel bricks, explosive bricks, armored bricks and rising speed. No two levels look the same.
 
-POWER-UPS
-- Wide paddle
-- Multi-ball
-- Lasers
-- Slow ball
-- Extra life
-Watch out: red capsules hurt, so dodge them.
+💥 POWER-UPS
+• Multi-ball
+• Lasers
+• Wide paddle
+• Slow ball
+• Extra life
+Watch out: red capsules hurt, so dodge them!
 
-PLAY YOUR WAY
-- Your run is saved at the start of every level
-- Beat a boss and your next run starts after it
-- Short levels, easy to pick up
-- Share your best score with friends
+🚇 PERFECT FOR THE COMMUTE
+• Short levels you can finish in a minute or two
+• Your run is saved at the start of every level
+• Beat a boss and your next run starts after it
+• Easy to pick up, hard to master
+
+🏆 CHALLENGE YOUR FRIENDS
+Share your best score and dare your friends to beat it. #NeonBreakerChallenge
 
 Free to play with ads. An optional one-time purchase removes the full-screen and level-end ads.
-The game is in English.
