@@ -156,7 +156,11 @@ class _RectangleState extends State<_Rectangle> {
 
   @override
   void dispose() {
-    _ad?.dispose();
+    // After the frame: the AdWidget below can still be built or detached this frame, and an ad that is already
+    // disposed makes it throw "AdWidget requires Ad.load to be called".
+    final ad = _ad;
+    _ad = null;
+    if (ad != null) WidgetsBinding.instance.addPostFrameCallback((_) => ad.dispose());
     widget.service._loadRectangle();
     super.dispose();
   }
