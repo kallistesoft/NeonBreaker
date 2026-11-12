@@ -60,6 +60,9 @@ class AudioSoundService implements SoundService {
   final _pools = <Sfx, Future<AudioPool>>{};
   final _lastPlayed = <Sfx, DateTime>{};
 
+  /// Effects longer than 0.6 s (see assets/sfx).
+  static const _long = {Sfx.clear, Sfx.gameover, Sfx.bossdown};
+
   @override
   bool get muted => _muted;
 
@@ -77,10 +80,17 @@ class AudioSoundService implements SoundService {
     final last = _lastPlayed[sfx];
     if (last != null && now.difference(last).inMilliseconds < 40) return;
     _lastPlayed[sfx] = now;
-    final pool = _pools.putIfAbsent(sfx, () => AudioPool.createFromAsset(path: 'sfx/${sfx.name}.wav', maxPlayers: 3));
+    // Low latency = SoundPool on Android: 20 effects x 3 MediaPlayers ran out of decoders on Samsung (MEDIA_ERROR -19).
+    final pool = _pools.putIfAbsent(
+      sfx,
+      () => AudioPool.createFromAsset(path: 'sfx/${sfx.name}.wav', maxPlayers: 3, playerMode: PlayerMode.lowLatency),
+    );
     unawaited(() async {
       try {
-        await (await pool).start(volume: 0.7);
+        final stop = await (await pool).start(volume: 0.7);
+        // Low-latency players never report completion, so hand the player back once the effect is over.
+        await Future<void>.delayed(Duration(milliseconds: _long.contains(sfx) ? 1800 : 600));
+        await stop();
       } catch (_) {
         // Browsers can refuse audio before the first user gesture; a missed effect is fine.
       }
